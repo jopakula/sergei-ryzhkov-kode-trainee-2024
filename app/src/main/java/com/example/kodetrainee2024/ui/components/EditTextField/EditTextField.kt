@@ -15,14 +15,16 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -31,26 +33,43 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.kodetrainee2024.R
+import com.example.kodetrainee2024.ui.screens.main.components.FilterOptions
 
 @Suppress("FunctionName")
 @Composable
 fun EditTextField(
     value: String? = null,
     onValueChange: (String) -> Unit = {},
-    hint: String = "Введи имя, тег, почту...",
+    hint: String? = null,
     iconSearch: Painter = painterResource(id = R.drawable.icon_search),
-    textSize: TextUnit = 15.sp,
-    iconSize: Dp = 24.dp,
-    colorBackGround: Color = colorResource(id = R.color.background_edit_text_field),
-    hintColor: Color = colorResource(id = R.color.hint_color),
-    iconMenu: ImageVector? = null,
+    textSize: TextUnit = 16.sp,
+    iconSize: Dp = 22.dp,
+    hintColor: Color = Color(R.color.hint_color),
+    iconMenu: Painter = painterResource(id = R.drawable.icon_list_ui_alt),
     padding: Dp = 8.dp,
-    roundingSize: Dp = 16.dp,
-    clearText: String = "Отмена",
+    roundingSize: Dp = 14.dp,
+    clearText: String? = null,
     clearTextColor: Color = colorResource(id = R.color.clear_text_color),
+    onFilterAlphabetSelected: (Boolean) -> Unit,
+    initialSort: String,
+    onSortSelected: (String) -> Unit,
 ) {
+    val colorBackGround = colorResource(id = R.color.edit_text_background)
     val focusRequester = remember { FocusRequester() }
     val interactionSource = remember { MutableInteractionSource() }
+
+    var isSheetOpen by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    if (isSheetOpen) {
+        FilterOptions(
+            isSheetOpen = isSheetOpen,
+            onDismissRequest = { isSheetOpen = false },
+            onFilterAlphabetSelected = onFilterAlphabetSelected,
+            initialSort = initialSort,
+            onSortSelected = onSortSelected,
+        )
+    }
 
     Row(
         modifier =
@@ -76,7 +95,7 @@ fun EditTextField(
                     modifier =
                         Modifier
                             .size(iconSize),
-                    painter = iconSearch,
+                    painter = it,
                     contentDescription = null,
                     tint = if (value.isNullOrEmpty()) hintColor else Color.Black,
                 )
@@ -84,7 +103,7 @@ fun EditTextField(
             Spacer(
                 modifier =
                     Modifier
-                        .width(padding),
+                        .width((iconSize / 4)),
             )
             Box(
                 modifier =
@@ -93,7 +112,7 @@ fun EditTextField(
                         .height(iconSize),
                 contentAlignment = Alignment.CenterStart,
             ) {
-                if (value.isNullOrEmpty() && hint.isNotEmpty()) {
+                if (value.isNullOrEmpty() && !hint.isNullOrEmpty()) {
                     Text(
                         text = hint,
                         fontSize = textSize,
@@ -105,25 +124,29 @@ fun EditTextField(
                         Modifier
                             .focusRequester(focusRequester),
                     value = value ?: "",
-                    onValueChange = onValueChange,
+                    onValueChange = { newQuery ->
+                        searchQuery = newQuery
+                        onValueChange(newQuery)
+                    },
                     textStyle =
                         TextStyle(
                             fontSize = textSize,
                         ),
                 )
             }
-            if (value.isNullOrEmpty() && iconMenu != null) {
+            if (value.isNullOrEmpty()) {
                 Icon(
                     modifier =
                         Modifier
-                            .size(iconSize),
-                    imageVector = iconMenu,
+                            .size(iconSize)
+                            .clickable { isSheetOpen = true },
+                    painter = iconMenu,
                     contentDescription = null,
                     tint = hintColor,
                 )
             }
         }
-        if (!value.isNullOrEmpty() && clearText.isNotEmpty()) {
+        if (!value.isNullOrEmpty() && !clearText.isNullOrEmpty()) {
             Text(
                 text = clearText,
                 color = clearTextColor,
